@@ -2,6 +2,8 @@ import express from "express";
 import path from "path";
 import { fileURLToPath } from "url";
 import hbs from "hbs";
+import geocode from "./utils/geocode.js";
+import forecast from "./utils/forecast.js";
 const __filename = fileURLToPath(import.meta.url);
 
 const __dirname = path.dirname(__filename);
@@ -37,7 +39,51 @@ app.get("/help", (req, res) => {
 });
 
 app.get("/weather", (req, res) => {
-  res.send("Weather");
+  if (!req.query.address) {
+    return res.send({
+      error: "You must provide a search term.",
+    });
+  }
+
+  geocode(
+    req.query.address,
+    (error, { latitude, longitude, location } = {}) => {
+      if (error) {
+        return res.send({ error });
+      }
+
+      forecast(latitude, longitude, (error, forecastData) => {
+        if (error) {
+          return res.send({ error });
+        }
+        res.send({
+          forecast: forecastData,
+          location,
+          address: req.query.address,
+        });
+      });
+    }
+  );
+
+  // console.log(req.query.address);
+  // res.send({
+  // forecat: "It is raining.",
+  // location: "Philadelphia",
+  // address: req.query.address,
+  // });
+});
+
+app.get("/products", (req, res) => {
+  if (!req.query.search) {
+    return res.send({
+      error: "You must provide a search term.",
+    });
+  }
+
+  console.log(req.query.search);
+  res.send({
+    products: [],
+  });
 });
 
 app.get("/help/*", (req, res) => {
@@ -59,3 +105,4 @@ app.get("*", (req, res) => {
 app.listen(3000, () => {
   console.log("Page listen on port 3000");
 });
+
